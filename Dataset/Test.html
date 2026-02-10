@@ -1,0 +1,251 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>HW2 Top10 Horizon</title>
+
+<style>
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      margin: 16px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    #chart {
+      display: grid;
+      grid-template-columns: 280px auto 200px;
+      column-gap: 12px;
+    }
+
+    .row {
+      height: 28px;
+      display: flex;
+      align-items: center;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    canvas {
+      image-rendering: pixelated;
+    }
+
+    #tooltip {
+      position: absolute;
+      pointer-events: none;
+      background: rgba(0,0,0,0.85);
+      color: #fff;
+      padding: 4px 6px;
+      font-size: 11px;
+      border-radius: 3px;
+      display: none;
+    }
+</style>
+
+<div class="controls">
+    <label>Scheme
+        <select id="scheme">
+            <option>Greens</option>
+            <option>Blues</option>
+            <option>Oranges</option>
+            <option>Reds</option>
+            <option>Purples</option>
+            <option>Greys</option>
+        </select>
+    </label>
+
+    <label>Bands
+        <input id="bands" type="range" min="1" max="7" value="5">
+        <span id="bandsVal">5</span>
+    </label>
+
+    <label>Start
+        <input id="start" type="range">
+    </label>
+
+    <label>End
+        <input id="end" type="range">
+    </label>
+
+    <div id="rangeLabel"></div>
+</div>
+
+<div id="chart">
+    <div id="labels"></div>
+    <div id="horizon"></div>
+    <div id="bars"></div>
+</div>
+
+<div id="tooltip"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script>
+    (async function () {
+
+      const width = 900;
+      const step = 28;
+
+      const schemeMap = {
+        Greens: d3.schemeGreens,
+        Blues: d3.schemeBlues,
+        Oranges: d3.schemeOranges,
+        Reds: d3.schemeReds,
+        Purples: d3.schemePurples,
+        Greys: d3.schemeGreys
+      };
+
+      const raw = await fetch("./top10_daily.json").then(r => r.json());
+
+      const dates = raw.dates.map(d => new Date(d));
+      const series = raw.series;
+
+      const start = document.getElementById("start");
+      const end = document.getElementById("end");
+      const bandsSlider = document.getElementById("bands");
+      const bandsVal = document.getElementById("bandsVal");
+      const schemeSel = document.getElementById("scheme");
+      const rangeLabel = document.getElementById("rangeLabel");
+
+      start.min = 0;
+      start.max = dates.length - 2;
+      start.value = 0;
+
+      end.min = 1;
+      end.max = dates.length - 1;
+      end.value = dates.length - 1;
+
+      const tooltip = document.getElementById("tooltip");
+
+      function windowed() {
+        const s = +start.value;
+        const e = +end.value;
+
+        return series.map(s0 => {
+          let total = 0;
+          for (let i = s; i <= e; i++) total += s0.values[i];
+          return {
+            sku: s0.sku,
+            name: s0.name,
+            values: s0.values.slice(s, e + 1),
+            total
+          };
+        })
+        .sort((a,b) => b.total - a.total)
+        .slice(0, 10);
+      }
+
+      function render() {
+
+        bandsVal.textContent = bandsSlider.value;
+
+        const s = +start.value;
+        const e = +end.value;
+
+        rangeLabel.textContent =
+          dates[s].toISOString().slice(0,10) +
+          " → " +
+          dates[e].toISOString().slice(0,10);
+
+        const data = windowed();
+
+        document.getElementById("labels").innerHTML = "";
+        document.getElementById("horizon").innerHTML = "";
+        document.getElementById("bars").innerHTML = "";
+
+        const maxV = d3.max(data, d => d3.max(d.values));
+        const maxTotal = d3.max(data, d => d.total);
+
+        data.forEach((d, i) => {
+          const div = document.createElement("div");
+          div.className = "row";
+          div.textContent = `${i+1}. ${d.sku} ${d.name}`;
+          document.getElementById("labels").appendChild(div);
+        });
+
+        data.forEach((d, i) => {
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = step;
+
+          canvas.onmousemove = ev => {
+            const rect = canvas.getBoundingClientRect();
+            const x = ev.clientX - rect.left;
+            const idx = Math.floor(x / width * d.values.length);
+            const date = dates[s + idx];
+            tooltip.style.display = "block";
+            tooltip.style.left = ev.pageX + 10 + "px";
+            tooltip.style.top = ev.pageY + 10 + "px";
+            tooltip.textContent =
+              date.toISOString().slice(0,10) + " : " + d.values[idx];
+          };
+
+          canvas.onmouseleave = () => tooltip.style.display = "none";
+
+          const ctx = canvas.getContext("2d");
+          const bands = +bandsSlider.value;
+          const scheme = schemeMap[schemeSel.value];
+          const color = i => scheme[Math.max(3, bands)][i + Math.max(0, 3 - bands)];
+
+          ctx.clearRect(0,0,width,step);
+
+          for (let b = 0; b < bands; b++) {
+            ctx.fillStyle = color(b);
+            for (let px = 0; px < width; px++) {
+              const j = Math.floor(px / (width-1) * (d.values.length-1));
+              const v = maxV === 0 ? 0 : d.values[j] / maxV;
+              const bandV = Math.max(0, Math.min(1, v * bands - b));
+              const h = bandV * step;
+              if (h > 0) ctx.fillRect(px, step - h, 1, h);
+            }
+          }
+
+          document.getElementById("horizon").appendChild(canvas);
+        });
+
+        const x = d3.scaleLinear()
+          .domain([0, maxTotal])
+          .range([0, 160]);
+
+        const svg = d3.select("#bars")
+          .append("svg")
+          .attr("width", 180)
+          .attr("height", data.length * step);
+
+        svg.selectAll("rect")
+          .data(data)
+          .join("rect")
+          .attr("y", (d,i) => i * step + 4)
+          .attr("height", step - 8)
+          .attr("width", d => x(d.total))
+          .attr("fill", "#aaa");
+
+        svg.selectAll("text")
+          .data(data)
+          .join("text")
+          .attr("x", d => x(d.total) + 4)
+          .attr("y", (d,i) => i * step + step/2)
+          .attr("dy", "0.35em")
+          .style("font-size", "10px")
+          .text(d => d.total);
+      }
+
+      start.oninput = () => {
+        if (+start.value >= +end.value) start.value = +end.value - 1;
+        render();
+      };
+
+      end.oninput = () => {
+        if (+end.value <= +start.value) end.value = +start.value + 1;
+        render();
+      };
+
+      bandsSlider.oninput = render;
+      schemeSel.onchange = render;
+
+      render();
+
+    })();
+</script>
