@@ -13,15 +13,13 @@ HW2/
     365-day aggregated summary
 
   - top10.json  
-    Top 10 selling items for the full year (with product names)
+    Top 10 selling items for the full year 
 
   - top10_daily.json  
     Daily sales counts for Top 10 items across 365 days
 
   - Test.html  
     D3.js interactive visualization
-
-- README.md
 
 ## Visualization
 - Implemented using D3.js
