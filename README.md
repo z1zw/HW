@@ -4,15 +4,24 @@
 - Java
 
 ## Project Structure
-
 HW2/
-├─ src/ Java source code 
-├─ Dataset/
-│ ├─ summary.json 365-day aggregated summary
-│ ├─ top10.json Top 10 selling items for the full year (with product names)
-│ ├─ top10_daily.json Daily sales counts for Top 10 items (365 days)
-│ └─ Test.html D3.js visualization
-├─ README.md
+- src/  
+  Java source code for simulation, aggregation, and data export
+
+- Dataset/
+  - summary.json  
+    365-day aggregated summary
+
+  - top10.json  
+    Top 10 selling items for the full year (with product names)
+
+  - top10_daily.json  
+    Daily sales counts for Top 10 items across 365 days
+
+  - Test.html  
+    D3.js interactive visualization
+
+- README.md
 
 ## Visualization
 - Implemented using D3.js
