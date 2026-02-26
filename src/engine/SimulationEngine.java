@@ -10,6 +10,7 @@ import stats.CustomerSummaryCollector;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -47,7 +48,7 @@ public final class SimulationEngine {
                  date = date.plusDays(1), dayIndex++) {
 
                 int customersToday = customersForDay(storeId, date, dayIndex);
-                aggregator.addCustomers(customersToday);
+                aggregator.addCustomers(date, customersToday);
 
                 for (int customerId = 1; customerId <= customersToday; customerId++) {
 
