@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 public final class Aggregator {
 
     private final ProductCatalog catalog;
-    private static final int WINDOW_DAYS = 180;
+    private static final int WINDOW_DAYS = 14;
     private final Map<LocalDate, Integer> dailyCustomers = new HashMap<>();
     private List<LocalDate> firstNDates(int windowDays) {
         List<LocalDate> dates = dailySkuCounts.keySet().stream().sorted().toList();
@@ -181,17 +181,15 @@ public final class Aggregator {
             for (int sku : skus) result.put(sku, perSku);
         }
         double expectedTotalItemsPerDay = avgCustomers * avgItemsPerCustomer;
-        double otherExpectedTotal = expectedTotalItemsPerDay - specialTotal;
-        List<Integer> otherSkus = new ArrayList<>();
-        for (int sku : catalog.allSkus()) {
-            Product p = catalog.productsBySku().get(sku);
-            if (p != null && !SPECIAL.contains(p.type())) otherSkus.add(sku);
-        }
-        if (!otherSkus.isEmpty()) {
-            double perSku = otherExpectedTotal / otherSkus.size();
-            for (int sku : otherSkus) result.put(sku, perSku);
-        }
+        double otherExpectedTotal = Math.max(0.0, expectedTotalItemsPerDay - specialTotal);
+        List<Integer> all = catalog.allSkus();
+        if (!all.isEmpty()) {
+            double perSku = otherExpectedTotal / all.size();
 
+            for (int sku : all) {
+                result.merge(sku, perSku, Double::sum);
+            }
+        }
         return result;
     }
     private static final Set<String> SPECIAL = Set.of(

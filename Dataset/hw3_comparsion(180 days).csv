@@ -1,0 +1,45 @@
+=====================================================
+                    HW3 SALES REPORT(Team 8)
+=====================================================
+
+Probabilities of Each Item Type
+-----------------------------------------------------
+Type,Probability
+Milk,70.0%
+Cereal,36.5%
+Baby Food,20.0%
+Diapers,16.8%
+Peanut Butter,10.0%
+Bread,50.0%
+Jelly/Jam,13.5%
+-----------------------------------------------------
+Actual Avg Customers per day,8174.26
+Actual Avg Sales per day,249269.81
+Minimum # products sold, non-special sku, 14 days,19622
+Maximum # products sold, non-special sku, 14 days,20614
+
+Average Sales Per Day (Actual)
+-----------------------------------------------------
+Type,Total Sales,Avg Sales Per Day,% Total,# Items in Type,Sales Per Item
+Milk,1150327,6390.71,2.56%,6,1065.12
+Cereal,2397451,13319.17,5.34%,93,143.22
+Baby Food,3545886,19699.37,7.90%,162,121.6
+Diapers,1885600,10475.56,4.20%,82,127.75
+Peanut Butter,544531,3025.17,1.21%,20,151.26
+Bread,1683904,9355.02,3.75%,48,194.9
+Jelly/Jam,271205,1506.69,0.60%,4,376.67
+Other,33389661,185498.12,74.42%,1660,111.75
+
+Average Predicted Sales Per Day
+-----------------------------------------------------
+Type,Total Sales,Avg Sales Per Day,% Total,# Items in Type,Sales Per Item
+Milk,1029956,5721.98,2.30%,6,953.66
+Cereal,537049,2983.6,1.20%,93,32.08
+Baby Food,294273,1634.85,0.66%,162,10.09
+Diapers,247189,1373.27,0.55%,82,16.75
+Peanut Butter,147137,817.43,0.33%,20,40.87
+Bread,735683,4087.13,1.64%,48,85.15
+Jelly/Jam,198634,1103.52,0.44%,4,275.88
+Other,41686742,231593.01,92.89%,1660,139.51
+
+Total sales,44868565
