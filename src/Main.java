@@ -2,10 +2,7 @@ import config.SimulationConfig;
 import engine.SimulationEngine;
 import io.ProductLoader;
 import model.ProductCatalog;
-import stats.Aggregator;
-import stats.CustomerSummaryCollector;
-import stats.ToSQLite;
-import stats.Top10DailyExporter;
+import stats.*;
 
 import java.nio.file.Path;
 public class Main {
@@ -14,13 +11,15 @@ public class Main {
         ProductCatalog catalog = ProductLoader.load(productsPath);
         Aggregator aggregator = new Aggregator(catalog);
         CustomerSummaryCollector summaryCollector = null;
+        InventoryManager inventoryManager = new InventoryManager(catalog);
         if (SimulationConfig.SANITY_CHECK_ENABLED) {
             summaryCollector = new CustomerSummaryCollector();
         }
         SimulationEngine engine = new SimulationEngine(
                 catalog,
                 aggregator,
-                summaryCollector
+                summaryCollector,
+                inventoryManager
         );
         engine.run();
         aggregator.printSummary();

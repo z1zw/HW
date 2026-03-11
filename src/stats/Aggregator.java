@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 public final class Aggregator {
 
     private final ProductCatalog catalog;
-    private static final int WINDOW_DAYS = 14;
+    private static final int WINDOW_DAYS = 180;
     private final Map<LocalDate, Integer> dailyCustomers = new HashMap<>();
     private List<LocalDate> firstNDates(int windowDays) {
         List<LocalDate> dates = dailySkuCounts.keySet().stream().sorted().toList();

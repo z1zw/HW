@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HW4</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 24px;
+            background: #f8fafc;
+            color: #1f2937;
+        }
+
+        h1 {
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            margin-bottom: 24px;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .summary {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .card {
+            background: #eef2ff;
+            border-radius: 10px;
+            padding: 14px 18px;
+            min-width: 180px;
+        }
+
+        .card h3 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            color: #4b5563;
+        }
+
+        .card p {
+            margin: 0;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .low-stock-list {
+            margin-top: 8px;
+        }
+
+        .low-stock-item {
+            color: #b91c1c;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        svg {
+            width: 100%;
+            height: 500px;
+        }
+
+        .axis path,
+        .axis line {
+            stroke: #cbd5e1;
+        }
+
+        .bar {
+            fill: steelblue;
+        }
+
+        .bar.low {
+            fill: crimson;
+        }
+
+        .cases-bar {
+            fill: darkorange;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: rgba(17,24,39,0.92);
+            color: white;
+            padding: 8px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        .legend {
+            display: flex;
+            gap: 16px;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .legend span {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+<h1>HW4 </h1>
+<div class="subtitle"> inventory, cases ordered, and stock alerts</div>
+
+<div class="panel">
+    <div class="summary">
+        <div class="card">
+            <h3>Total SKUs</h3>
+            <p id="totalSkus">0</p>
+        </div>
+        <div class="card">
+            <h3>Total Inventory</h3>
+            <p id="totalInventory">0</p>
+        </div>
+        <div class="card">
+            <h3>Total Cases Ordered</h3>
+            <p id="totalCases">0</p>
+        </div>
+        <div class="card">
+            <h3>Low Stock Count</h3>
+            <p id="lowStockCount">0</p>
+        </div>
+    </div>
+</div>
+
+<div class="panel">
+    <h2>Low Stock Alerts</h2>
+    <div id="lowStockList" class="low-stock-list"></div>
+</div>
+
+<div class="panel">
+    <h2>Inventory by SKU</h2>
+    <svg id="inventoryChart"></svg>
+    <div class="legend">
+        <span><i class="dot" style="background: steelblue;"></i> Normal stock</span>
+        <span><i class="dot" style="background: crimson;"></i> Low stock (&lt; 20)</span>
+    </div>
+</div>
+
+<div class="panel">
+    <h2>Cases Ordered by SKU</h2>
+    <svg id="casesChart"></svg>
+    <div class="legend">
+        <span><i class="dot" style="background: darkorange;"></i> Cases ordered</span>
+    </div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+    const LOW_STOCK_THRESHOLD = 20;
+    const tooltip = d3.select("#tooltip");
+
+    d3.json("./inventory.json").then(data => {
+        if (!data || data.length === 0) {
+            d3.select("body").append("p").text("No inventory data found.");
+            return;
+        }
+
+        const totalSkus = data.length;
+        const totalInventory = d3.sum(data, d => d.inventory);
+        const totalCases = d3.sum(data, d => d.casesOrdered);
+        const lowStock = data.filter(d => d.inventory < LOW_STOCK_THRESHOLD);
+
+        d3.select("#totalSkus").text(totalSkus);
+        d3.select("#totalInventory").text(totalInventory);
+        d3.select("#totalCases").text(totalCases);
+        d3.select("#lowStockCount").text(lowStock.length);
+
+        const lowStockList = d3.select("#lowStockList");
+        if (lowStock.length === 0) {
+            lowStockList.append("div").text("No low-stock items.");
+        } else {
+            lowStock
+                .sort((a, b) => a.inventory - b.inventory)
+                .forEach(d => {
+                    lowStockList
+                        .append("div")
+                        .attr("class", "low-stock-item")
+                        .text(`SKU ${d.sku} → inventory ${d.inventory}`);
+                });
+        }
+
+        drawBarChart({
+            svgId: "#inventoryChart",
+            data: data,
+            valueKey: "inventory",
+            colorFn: d => d.inventory < LOW_STOCK_THRESHOLD ? "crimson" : "steelblue",
+            label: "Inventory"
+        });
+
+        drawBarChart({
+            svgId: "#casesChart",
+            data: data,
+            valueKey: "caseOrdered",
+            colorFn: () => "darkorange",
+            label: "Cases Ordered"
+        });
+    }).catch(err => {
+        console.error(err);
+        d3.select("body")
+            .append("p")
+            .style("color", "crimson")
+            .text("Failed to load inventory.json.");
+    });
+
+    function drawBarChart({ svgId, data, valueKey, colorFn, label }) {
+        const svg = d3.select(svgId);
+        svg.selectAll("*").remove();
+
+        const width = 1200;
+        const height = 500;
+        const margin = { top: 20, right: 30, bottom: 130, left: 70 };
+
+        svg.attr("viewBox", `0 0 ${width} ${height}`);
+
+        const x = d3.scaleBand()
+            .domain(data.map(d => String(d.sku)))
+            .range([margin.left, width - margin.right])
+            .padding(0.15);
+
+        const y = d3.scaleLinear()
+            .domain([0, d3.max(data, d => d[valueKey]) || 0])
+            .nice()
+            .range([height - margin.bottom, margin.top]);
+
+        svg.append("g")
+            .attr("class", "axis")
+            .attr("transform", `translate(0,${height - margin.bottom})`)
+            .call(d3.axisBottom(x).tickValues(x.domain().filter((d, i) => i % Math.ceil(data.length / 30) === 0)))
+            .selectAll("text")
+            .attr("transform", "rotate(-45)")
+            .style("text-anchor", "end");
+
+        svg.append("g")
+            .attr("class", "axis")
+            .attr("transform", `translate(${margin.left},0)`)
+            .call(d3.axisLeft(y));
+
+        svg.append("text")
+            .attr("x", 20)
+            .attr("y", 18)
+            .attr("font-size", "13px")
+            .attr("fill", "#374151")
+            .text(label);
+
+        svg.selectAll("rect")
+            .data(data)
+            .enter()
+            .append("rect")
+            .attr("x", d => x(String(d.sku)))
+            .attr("y", d => y(d[valueKey]))
+            .attr("width", x.bandwidth())
+            .attr("height", d => y(0) - y(d[valueKey]))
+            .attr("fill", d => colorFn(d))
+            .attr("rx", 2)
+            .on("mousemove", function(event, d) {
+                tooltip
+                    .style("opacity", 1)
+                    .html(
+                        `<strong>SKU:</strong> ${d.sku}<br>` +
+                        `<strong>Inventory:</strong> ${d.inventory}<br>` +
+                        `<strong>Cases Ordered:</strong> ${d.casesOrdered}`
+                    )
+                    .style("left", (event.pageX + 12) + "px")
+                    .style("top", (event.pageY - 28) + "px");
+            })
+            .on("mouseleave", function() {
+                tooltip.style("opacity", 0);
+            });
+    }
+</script>
+</body>
+</html>

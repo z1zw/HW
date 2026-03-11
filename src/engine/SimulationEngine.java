@@ -7,7 +7,9 @@ import rng.FunctionalRNG;
 import stats.Aggregator;
 import stats.CustomerSummary;
 import stats.CustomerSummaryCollector;
+import stats.InventoryManager;
 
+import java.nio.file.Path;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -23,11 +25,13 @@ public final class SimulationEngine {
 
     private final Map<String, List<Integer>> skusByType;
     private final List<Integer> allSkus;
+    private InventoryManager inventoryManager;
 
     public SimulationEngine(
             ProductCatalog catalog,
             Aggregator aggregator,
-            CustomerSummaryCollector summaryCollector
+            CustomerSummaryCollector summaryCollector,
+            InventoryManager inventoryManager
     ) {
         this.catalog = catalog;
         this.aggregator = aggregator;
@@ -35,6 +39,7 @@ public final class SimulationEngine {
         this.rng = new FunctionalRNG(SimulationConfig.GLOBAL_SEED);
         this.skusByType = catalog.skusByType();
         this.allSkus = catalog.allSkus();
+        this.inventoryManager = inventoryManager;
     }
 
     public void run() {
@@ -47,6 +52,8 @@ public final class SimulationEngine {
                  !date.isAfter(SimulationConfig.END_DATE_INCLUSIVE);
                  date = date.plusDays(1), dayIndex++) {
 
+                inventoryManager.processDelivery(date);
+
                 int customersToday = customersForDay(storeId, date, dayIndex);
                 aggregator.addCustomers(date, customersToday);
 
@@ -58,16 +65,13 @@ public final class SimulationEngine {
                         String key = date + "-" + storeId + "-" + customerId;
                         summaryCollector.mark(key, cs);
                     }
-
                     int targetItems = rng.uniformIntInclusive(
                             SimulationConfig.ITEMS_PER_CUSTOMER_LOW_INCLUSIVE,
                             SimulationConfig.ITEMS_PER_CUSTOMER_HIGH_INCLUSIVE,
                             storeId, dayIndex, customerId,
                             RuleId.ITEM_COUNT, 0
                     );
-
                     int itemsAdded = 0;
-
                     itemsAdded = applyMilkCereal(storeId, date, dayIndex, customerId, targetItems, itemsAdded, cs);
                     if (itemsAdded >= targetItems) continue;
 
@@ -81,8 +85,15 @@ public final class SimulationEngine {
                     if (itemsAdded >= targetItems) continue;
 
                     fillRandomItems(storeId, date, dayIndex, customerId, targetItems, itemsAdded);
+
+
                 }
             }
+        }
+        try {
+            inventoryManager.experJson(Path.of("Hw4/inventory.json"));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -266,6 +277,19 @@ public final class SimulationEngine {
                 storeId, dayIndex, customerId,
                 rulePickId, itemsAdded
         );
+        int sku=skus.get(idx);
+        if(!inventoryManager.inStock(sku)){
+
+            for(int replace:skus){
+                if(inventoryManager.inStock(replace)){
+                    sku=replace;
+                    break;
+                }
+            }
+            if(!inventoryManager.inStock(sku)){
+                return itemsAdded;
+            }
+        }
         emitTransaction(storeId, date, customerId, skus.get(idx));
         return itemsAdded + 1;
     }
@@ -273,6 +297,10 @@ public final class SimulationEngine {
     private void emitTransaction(int storeId, LocalDate date, int customerId, int sku) {
         Product p = catalog.productsBySku().get(sku);
         if (p == null) return;
+        if(!inventoryManager.inStock(sku)){
+            return;
+        }
+        int Left= inventoryManager.sell(sku);
 
         double salePrice = round2(p.basePrice() * SimulationConfig.PRICE_MULTIPLIER);
         aggregator.accept(date, storeId, customerId, sku, salePrice);
