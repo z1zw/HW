@@ -73,9 +73,9 @@ public class InventoryManager {
                 int inventory=itemsLeft.getOrDefault(sku,0);
                 int cases=caseOrder.getOrDefault(sku,0);
                 w.write(" {\n");
-                w.write(" \"sku\": \""+sku+"\",\n");
-                w.write("\"inventory\": \""+inventory+"\",\n");
-                w.write("\"caseOrdered\": \""+cases+"\"\n");
+                w.write(" \"sku\": "+sku+",\n");
+                w.write("\"inventory\": "+inventory+",\n");
+                w.write("\"caseOrdered\": "+cases+"\n");
                 w.write("}");
             }
             w.write("\n]");
