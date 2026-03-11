@@ -40,3 +40,26 @@ HW2/
 
 <img width="1886" height="724" alt="_cgi-bin_mmwebwx-bin_webwxgetmsgimg__ MsgID=116741359099271716 skey=@crypt_e1bf3aeb_5c96205c5958d0888ff8f28caf8922e2 mmweb_appid=wx_webfilehelper" src="https://github.com/user-attachments/assets/7aa63672-6e32-402f-ac2d-0aef69085ad2" />
 
+HW4：
+<img width="2248" height="1354" alt="image" src="https://github.com/user-attachments/assets/0369775e-0df3-46ac-864e-daf0ff4899be" />
+[
+ {
+ "sku": "42081001",
+"inventory": "293",
+"caseOrdered": "3424"
+},
+ {
+ "sku": "42082001",
+"inventory": "297",
+"caseOrdered": "3422"
+},
+ {
+ "sku": "42083001",
+"inventory": "293",
+"caseOrdered": "3431"
+},
+ {
+ "sku": "42084001",
+"inventory": "287",
+"caseOrdered": "3422"
+},
